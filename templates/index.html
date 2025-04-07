@@ -1,39 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meditation & Exercise Chatbot</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <title>Meditation & Exercise Chatbot</title>
+  <link rel="stylesheet" href="static/styles.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #e6f5e6; /* light green background */
+    }
+
+    .chat-container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .chat-header {
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .chat-header::before {
+      content: "🧘‍♂️ ";
+    }
+
+    .chat-box {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 15px;
+      background-color: #fefefe;
+    }
+
+    .bot-message, .user-message {
+      margin: 10px 0;
+      padding: 12px 15px;
+      border-radius: 20px;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+
+    .bot-message {
+      background-color: #d4edda;
+      align-self: flex-start;
+    }
+
+    .user-message {
+      background-color: #cce5ff;
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
+    }
+
+    .input-area {
+      display: flex;
+      margin-top: 15px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px 0 0 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .input-area button {
+      background-color: green;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 0 10px 10px 0;
+      cursor: pointer;
+    }
+
+    .input-area button:hover {
+      background-color: darkgreen;
+    }
+  </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h2>Meditation & Exercise Chatbot</h2>
-        <div id="chatbox"></div>
-        <input type="text" id="user-input" placeholder="Ask about meditation or exercise..." />
-        <button onclick="sendMessage()">Send</button>
+  <div class="chat-container">
+    <div class="chat-header">Meditation & Exercise Chatbot</div>
+
+    <div class="chat-box" id="chat-box"></div>
+
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Ask about meditation or exercise...">
+      <button id="send-btn">Send</button>
     </div>
+  </div>
 
-    <script>
-        function sendMessage() {
-            let userInput = document.getElementById("user-input").value;
-            if (userInput.trim() === "") return;
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
 
-            let chatbox = document.getElementById("chatbox");
-            chatbox.innerHTML += `<div class="user-message">You: ${userInput}</div>`;
+    function appendMessage(message, sender) {
+      const msg = document.createElement("div");
+      msg.className = sender === "user" ? "user-message" : "bot-message";
+      msg.textContent = message;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-            fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userInput }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                chatbox.innerHTML += `<div class="bot-message">Bot: ${data.response}</div>`;
-                document.getElementById("user-input").value = "";
-            })
-            .catch(error => console.error("Error:", error));
-        }
-    </script>
+    sendBtn.addEventListener("click", () => {
+      const message = userInput.value.trim();
+      if (message === "") return;
+
+      appendMessage(message, "user");
+      userInput.value = "";
+
+      fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message })
+      })
+      .then(response => response.json())
+      .then(data => {
+        appendMessage(data.response, "bot");
+      })
+      .catch(() => {
+        appendMessage("Oops! Something went wrong.", "bot");
+      });
+    });
+
+    userInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") sendBtn.click();
+    });
+  </script>
 </body>
 </html>
