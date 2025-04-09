@@ -1,53 +1,69 @@
 from flask import Flask, request, jsonify, render_template
-import google.generativeai as genai
-import os
 from dotenv import load_dotenv
+import os
+import requests
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+# Get the OpenRouter API key
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-# Configure Gemini AI securely
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    raise ValueError("Missing API key. Set GEMINI_API_KEY in your .env file.")
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("gemini-1.5-pro-latest")
-
-# Allowed topics
-ALLOWED_TOPICS = ["meditation", "exercise", "fitness", "mindfulness", "yoga", "workout", "relaxation", "stress relief"]
-
-def is_relevant(message):
-    message = message.lower()
-    return any(topic in message for topic in ALLOWED_TOPICS)
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route("/chat", methods=["POST"])
+@app.route('/chat', methods=['POST'])
 def chat():
-    user_input = request.json.get("message", "").strip()
-
-    if not is_relevant(user_input):
-        return jsonify({"response": "I'm here to help with meditation and exercise only. Please ask related questions!"})
-
-    prompt = f"""
-    You are a meditation and fitness assistant. Respond only with helpful information about meditation, relaxation, fitness, yoga, and mindfulness. 
-    If the question is unrelated, politely refuse to answer.
-    
-    User: {user_input}
-    Bot:
-    """
-    
     try:
-        response = model.generate_content(prompt)
-        return jsonify({"response": response.text})
-    except Exception as e:
-        print(f"Error: {e}")  
-        return jsonify({"response": "An error occurred. Please try again."})
+        user_input = request.json.get("message", "").strip()
+        if not user_input:
+            return jsonify({"response": "❌ Error: Please enter a message."})
 
-if __name__ == "__main__":
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        # ✅ Enhanced system prompt for strict and concise replies
+        payload = {
+            "model": "openai/gpt-3.5-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful meditation and exercise assistant. "
+                        "Respond ONLY with short, 1-line bullet points. Do NOT go off topic. "
+                        "Do not accept or answer inappropriate or unrelated questions."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": user_input
+                }
+            ]
+        }
+
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers)
+        response.raise_for_status()
+
+        result = response.json()
+        if "choices" in result and result["choices"]:
+            bot_response = result["choices"][0]["message"]["content"]
+        else:
+            return jsonify({"response": "❌ Error: Invalid API response."})
+
+        return jsonify({"response": bot_response})
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"response": f"❌ Network error: {str(e)}"})
+
+    except Exception as e:
+        return jsonify({"response": f"❌ Error: {str(e)}"})
+
+if __name__ == '__main__':
     app.run(debug=True)
