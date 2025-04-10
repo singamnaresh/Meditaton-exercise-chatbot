@@ -7,9 +7,9 @@ body {
 
 .chat-container {
   width: 100%;
-  max-width: 600px;
+  max-width: 1000px;
   margin: 40px auto;
-  background: white;
+  background: rgb(250, 249, 249);
   border-radius: 10px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
   overflow: hidden;
@@ -62,22 +62,59 @@ body {
   border-top: 1px solid #ccc;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   flex: 1;
   padding: 10px;
   font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
 button {
-  padding: 10px;
+  padding: 10px 15px;
   cursor: pointer;
   background-color: #88c0d0;
   border: none;
   color: white;
   border-radius: 5px;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: #5ea8ba;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🔔 Alarm and Upload Features */
+.alarm-section, .upload-section {
+  padding: 15px;
+  border-top: 1px solid #ccc;
+  background: #f9f9f9;
+}
+
+.alarm-section input,
+.upload-section input {
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+#stopAlarmBtn {
+  display: none;
+  background-color: #e57373;
+}
+
+#stopAlarmBtn:hover {
+  background-color: #d05050;
+}
+
+#poseResult {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #333;
 }
