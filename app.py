@@ -97,7 +97,7 @@ def analyze_pose():
 
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        with mp.solutions.pose.Pose(static_image_mode=True, model_complexity=2) as pose:
+        with mp.solutions.pose.Pose(static_image_mode=True, model_complexity=0) as pose:
             results = pose.process(img_rgb)
 
         if not results.pose_landmarks:
@@ -116,7 +116,7 @@ def analyze_pose():
                 continue
 
             ref_rgb = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
-            with mp.solutions.pose.Pose(static_image_mode=True, model_complexity=2) as ref_pose:
+            with mp.solutions.pose.Pose(static_image_mode=True, model_complexity=0) as ref_pose:
                 ref_result = ref_pose.process(ref_rgb)
 
             if not ref_result.pose_landmarks:
