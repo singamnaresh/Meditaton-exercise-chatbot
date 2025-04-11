@@ -1,13 +1,9 @@
-Flask==2.2.5
+Flask==3.1.0
 gunicorn==23.0.0
-python-dotenv==1.1.0
-openai==1.14.2
-
-# MediaPipe & dependencies
+requests==2.32.3
+openai==1.23.2
 mediapipe==0.10.8
 opencv-python==4.9.0.80
 numpy==1.26.4
-
-# Optional: Only include if you're using Google services directly
-# protobuf version must be pinned lower to avoid conflict
-protobuf==3.20.3
+python-dotenv==1.1.0
+tqdm==4.67.1
