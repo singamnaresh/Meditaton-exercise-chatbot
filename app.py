@@ -1,12 +1,13 @@
+import os
+os.environ["PYTHONMALLOC"] = "malloc"
 from flask import Flask, request, jsonify, render_template, session
 from dotenv import load_dotenv
-import os
 import requests
 from flask_cors import CORS
 import cv2
 import numpy as np
 import mediapipe as mp
-os.environ["PYTHONMALLOC"] = "malloc"
+
 
 
 app = Flask(__name__)
