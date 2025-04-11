@@ -6,6 +6,8 @@ from flask_cors import CORS
 import cv2
 import numpy as np
 import mediapipe as mp
+os.environ["PYTHONMALLOC"] = "malloc"
+
 
 app = Flask(__name__)
 CORS(app)
