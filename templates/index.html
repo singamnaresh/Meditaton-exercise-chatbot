@@ -12,9 +12,16 @@
       <img src="{{ url_for('static', filename='yoga-icon.png') }}" alt="Yoga Logo" class="logo" />
       <h1>Meditation & Exercise Guide 🧘‍♀️</h1>
     </div>
-
+  
+    <!-- 🔼 Alarm Moved Here -->
+    <div class="alarm-setter top-alarm">
+      <input type="number" id="alarmInput" placeholder="Set alarm in minutes">
+      <button onclick="setAlarmFromInput()">⏰ Set Alarm</button>
+      <button id="stopAlarmBtn" onclick="stopAlarm()" style="display: none;">🛑 Stop Alarm</button>
+    </div>
+  
     <div id="chat-box" class="chat-box"></div>
-
+  
     <div class="input-area">
       <!-- 🔼 Pose Upload Feature -->
       <form id="uploadForm" enctype="multipart/form-data">
@@ -23,23 +30,18 @@
         <button type="submit">Check Posture</button>
       </form>
       <div id="poseResult" style="margin-top: 10px; color: green;"></div>
-
+  
       <!-- 🔼 Chat Input -->
-      <input type="text" id="user-input" placeholder="Ask me something..." onkeypress="handleKeyPress(event)" />
-      <button onclick="sendMessage()">Send</button>
-      <button onclick="startListening()">🎤</button>
-      <button onclick="stopSpeaking()">🔇</button>
-
-      <!-- 🔼 Alarm Functionality -->
-      <div class="alarm-setter">
-        <input type="number" id="alarmInput" placeholder="Set alarm in minutes">
-        <button onclick="setAlarmFromInput()">⏰ Set Alarm</button>
-        <button id="stopAlarmBtn" onclick="stopAlarm()" style="display: none;">🛑 Stop Alarm</button>
+      <div class="input-group">
+        <input type="text" id="user-input" placeholder="Ask me something..." onkeypress="handleKeyPress(event)" />
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="startListening()">🎤</button>
+        <button onclick="stopSpeaking()">🔇</button>
       </div>
-    </div>    
+    </div>
   </div>
+  
 
-  <p style="color: red; font-size: 12px;">🔔 Please click anywhere before setting the alarm to enable sound</p>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script>

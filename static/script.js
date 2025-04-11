@@ -130,20 +130,20 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 });
 
-// ✅ Enhanced Pose Upload Handler (shows feedback only in chat)
 document.getElementById("uploadForm").addEventListener("submit", function (e) {
   e.preventDefault();
 
   const fileInput = document.getElementById("poseInput");
   const file = fileInput.files[0];
 
-  if (!file) {
-    addMessage("❌ Please select a file first.", "bot");
-    return;
-  }
-
   const formData = new FormData();
   formData.append("file", file);
+
+  // ✅ Check if a file was uploaded
+  if (!formData.get("file") || !formData.get("file").name) {
+    botResponse("⚠️ Please upload an image before submitting.");
+    return;
+  }
 
   addMessage("📸 Uploading and analyzing your exercise pose...", "user");
 
@@ -171,16 +171,13 @@ document.getElementById("uploadForm").addEventListener("submit", function (e) {
       }
   
       addMessage(content, "bot");
-  
-      // Only speak if feedback is safe text
+
       if (typeof feedback === "string" && feedback.length < 500) {
         speakText(feedback);
       }
     })
-    .catch((err) => {
-      console.error("Pose analysis error:", err.message || err);
-      addMessage("❌ Error analyzing pose. Please try again.", "bot");
+    .catch(error => {
+      console.error("Pose analysis error:", error);
+      botResponse("❗ Unable to process image. Please try again later.");
     });
-
-    
 });

@@ -78,18 +78,19 @@ def chat():
     except Exception as e:
         return jsonify({"response": f"❌ Error: {str(e)}"})
 
+
 @app.route('/analyze_pose', methods=['POST'])
 def analyze_pose():
     try:
         if 'file' not in request.files:
-            return jsonify({'result': '❌ No image uploaded.'})
+            return jsonify({'result': '❌ No image uploaded.', 'image_url': None})
 
         file = request.files['file']
         img_array = np.frombuffer(file.read(), np.uint8)
         img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
         if img is None:
-            return jsonify({'result': '❌ Invalid image file.'})
+            return jsonify({'result': '❌ Invalid image file.', 'image_url': None})
 
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -97,7 +98,7 @@ def analyze_pose():
             results = pose.process(img_rgb)
 
         if not results.pose_landmarks:
-            return jsonify({'result': '⚠️ No pose detected. Try a clearer photo.'})
+            return jsonify({'result': '⚠️ No pose detected. Try a clearer photo.', 'image_url': None})
 
         user_landmarks = results.pose_landmarks.landmark
         user_coords = np.array([(lm.x, lm.y, lm.z) for lm in user_landmarks]).flatten()
@@ -124,7 +125,7 @@ def analyze_pose():
             score = np.linalg.norm(user_coords - ref_coords)
             if score < best_score:
                 best_score = score
-                matched_pose = f'/{ref_path}'
+                matched_pose = f'/static/poses/n{i}.jpg'  # Make sure to return full URL for frontend
 
         THRESHOLD = 0.1
         if best_score < THRESHOLD:
@@ -141,7 +142,7 @@ def analyze_pose():
 
     except Exception as e:
         print("Pose analysis crash:", str(e))
-        return jsonify({'result': f"❌ Pose detection failed: {str(e)}"})
+        return jsonify({'result': f"❌ Pose detection failed: {str(e)}", 'image_url': None})
 
 
 if __name__ == '__main__':
