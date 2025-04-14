@@ -116,6 +116,7 @@ def analyze_pose():
                 continue
 
             ref_rgb = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
+            
             with mp.solutions.pose.Pose(static_image_mode=True, model_complexity=0) as ref_pose:
                 ref_result = ref_pose.process(ref_rgb)
 
