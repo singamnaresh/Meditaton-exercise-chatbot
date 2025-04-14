@@ -5,3 +5,5 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     plan: free
+    gunicorn app:app --workers 1 --threads 1 --timeout 60
+

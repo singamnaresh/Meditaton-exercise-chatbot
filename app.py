@@ -7,33 +7,33 @@ from flask_cors import CORS
 import cv2
 import numpy as np
 import mediapipe as mp
+import gc
+import threading
+from werkzeug.utils import secure_filename
 
-
-
+# Flask app setup
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'your_secret_key'
+UPLOAD_FOLDER = 'static/uploads'
+POSES_FOLDER = 'static/poses'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Load environment variables
+# Load .env vars
 load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-# MediaPipe setup
-import mediapipe as mp
+# MediaPipe Pose initialization
 mp_pose = mp.solutions.pose
-pose = mp_pose.Pose(
-    static_image_mode=True,
-    model_complexity=2,
-    enable_segmentation=False,
-    min_detection_confidence=0.5
-)
+pose_detector = mp_pose.Pose(static_image_mode=True, model_complexity=1)
 
-mp_drawing = mp.solutions.drawing_utils
-
+# Index route
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Chat route (uses session pose feedback)
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -41,7 +41,6 @@ def chat():
         if not user_input:
             return jsonify({"response": "❌ Error: Please enter a message."})
 
-        # Get pose feedback context
         last_pose_feedback = session.get("last_pose_feedback", "")
         context = f"The user uploaded a posture image. Feedback: {last_pose_feedback}" if last_pose_feedback else ""
 
@@ -81,6 +80,8 @@ def chat():
     except Exception as e:
         return jsonify({"response": f"❌ Error: {str(e)}"})
 
+# Pose analysis route
+
 
 @app.route('/analyze_pose', methods=['POST'])
 def analyze_pose():
@@ -97,39 +98,38 @@ def analyze_pose():
 
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        with mp.solutions.pose.Pose(static_image_mode=True, model_complexity=0) as pose:
-            results = pose.process(img_rgb)
+        # Create Pose instance only once
+        with mp_pose.Pose(static_image_mode=True, model_complexity=2) as pose_model:
+            user_result = pose_model.process(img_rgb)
 
-        if not results.pose_landmarks:
-            return jsonify({'result': '⚠️ No pose detected. Try a clearer photo.', 'image_url': None})
+            if not user_result.pose_landmarks:
+                return jsonify({'result': '⚠️ No pose detected. Try a clearer photo.', 'image_url': None})
 
-        user_landmarks = results.pose_landmarks.landmark
-        user_coords = np.array([(lm.x, lm.y, lm.z) for lm in user_landmarks]).flatten()
+            user_landmarks = user_result.pose_landmarks.landmark
+            user_coords = np.array([(lm.x, lm.y, lm.z) for lm in user_landmarks]).flatten()
 
-        best_score = float('inf')
-        matched_pose = None
+            best_score = float('inf')
+            matched_pose = None
 
-        for i in range(1, 13):
-            ref_path = f'static/poses/n{i}.jpg'
-            ref_img = cv2.imread(ref_path)
-            if ref_img is None:
-                continue
+            for i in range(1, 13):
+                ref_path = f'static/poses/n{i}.jpg'
+                ref_img = cv2.imread(ref_path)
+                if ref_img is None:
+                    continue
 
-            ref_rgb = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
-            
-            with mp.solutions.pose.Pose(static_image_mode=True, model_complexity=0) as ref_pose:
-                ref_result = ref_pose.process(ref_rgb)
+                ref_rgb = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
+                ref_result = pose_model.process(ref_rgb)
 
-            if not ref_result.pose_landmarks:
-                continue
+                if not ref_result.pose_landmarks:
+                    continue
 
-            ref_landmarks = ref_result.pose_landmarks.landmark
-            ref_coords = np.array([(lm.x, lm.y, lm.z) for lm in ref_landmarks]).flatten()
+                ref_landmarks = ref_result.pose_landmarks.landmark
+                ref_coords = np.array([(lm.x, lm.y, lm.z) for lm in ref_landmarks]).flatten()
 
-            score = np.linalg.norm(user_coords - ref_coords)
-            if score < best_score:
-                best_score = score
-                matched_pose = f'/static/poses/n{i}.jpg'  # Make sure to return full URL for frontend
+                score = np.linalg.norm(user_coords - ref_coords)
+                if score < best_score:
+                    best_score = score
+                    matched_pose = f'/static/poses/n{i}.jpg'
 
         THRESHOLD = 0.1
         if best_score < THRESHOLD:
@@ -139,6 +139,9 @@ def analyze_pose():
             feedback = "❌ Your posture is incorrect. Please follow the reference image below."
             image_url = matched_pose
 
+        # Save feedback in session for context-aware chat
+        session["last_pose_feedback"] = feedback
+
         return jsonify({
             'result': feedback,
             'image_url': image_url
@@ -147,7 +150,6 @@ def analyze_pose():
     except Exception as e:
         print("Pose analysis crash:", str(e))
         return jsonify({'result': f"❌ Pose detection failed: {str(e)}", 'image_url': None})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
